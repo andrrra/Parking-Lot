@@ -9,6 +9,7 @@
 they are connected using an atemporal predicate namely "connected" e.g.:
 Connected(DropOff, ParkingLot), Connected(ParkingLot, PickUp).
 
+
 1.2) I used a fluent predicate, named "at" which takes the car or agent as an object, the
 location it is current at and the current situation. For example:
 At(Car, DropOff, s0) shows that the car is at the drop-off location in the initial state
@@ -60,34 +61,33 @@ of the world, it does not. This principle is easy to represent procedurally (thu
 solutions to the frame problem).
 
 1.10) Successor-state axioms:
-Poss(a, s) => At(Agent, x, Result(a,s)) <=> (a = Move(Agent,y,x) or (not(a = Move(Agent,y,x)) and At(o,x,s)))
-Poss(a, s) => At(Agent, x, Result(a,s)) <=> (a = Drive(Agent, Car, y) or (not(a = Drive(Agent, Car, y)) and At(Agent, x, Result(a,s))))
-Poss(a, s) => At(Car, x, Result(a,s)) <=> (a = Drive(Agent, Car, y) or (not(a = Drive(Agent, Car, y)) and At(Car, x, Result(a,s))))
+Poss(a, s) => At(o, x, Result(a,s)) <=> ((Agent(o) and (a = Move(o,y,x) or a = Drive(o, Car, y) or (not(a = Move(o,y,x))
+                                            and not(a = Drive(o, Car, y)) and At(o,x,s)))) or
+                                         (Car(o) and (a = Drive(o, Car, y) or ((not(a = Drive(o, Car, y)) and At(o,x,s)))))
 
-Poss(a, s) => Parked(Car, Result(a,s)) <=> (a = Park(Car) or (not(a = Park(Car)) and not(a = Drive(Agent, Car, y))
-                                           and not(a = Deliver(Agent, Car)) and Parked(Car, s)))
+Poss(a, s) => Parked(Car, Result(a,s)) <=> (a = Park(Agent, Car, ParkingLot) or (not(a = Park(Agent, Car, ParkingLot)) and
+                                           not(a = Drive(Agent, Car, y)) and Parked(Car, s)))
 
-Poss(a, s) => Delivered(Car, Result(a,s)) <=> (a = Deliver(Agent, Car) or (not(a = Deliver(Agent, Car)) and not(a = Park(Car)) and
-                                              not(a = Drive(Agent, Car, y)) and Delivered(Car, s)))
+Poss(a, s) => Delivered(Car, Result(a,s)) <=> (a = Deliver(Agent, Car) or (not(a = Deliver(Agent, Car)) and Delivered(Car, s)))
 
 1.11)
 
 Converting all possibility axioms to CNF, we get:
-- Move(x,y)
-At(Agent, x, s) and At(Car, x, s) and Connected(x, y) => At(Agent, y, Result(Move(x,y),s)) (eliminate =>)
-not(At(Agent, x, s) and At(Car, x, s) and Connected(x, y)) or At(Agent, y, Result(Move(x,y),s)) (move not inwards)
-not(At(Agent, x, s)) or not(At(Car,x,s)) or not(Connected(x,y)) or At(Agent, y, Result(Move(x,y),s))
+- Move(Agent,x,y)
+At(Agent, x, s) and Connected(x, y) => At(Agent, y, Result(Move(x,y),s)) (eliminate =>)
+not(At(Agent, x, s) and Connected(x, y)) or At(Agent, y, Result(Move(x,y),s)) (move not inwards)
+not(At(Agent, x, s)) or not(Connected(x,y)) or At(Agent, y, Result(Move(x,y),s))
 
 - Park(Agent, Car, ParkingLot)
-At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) and not(Parked(Car, s)) => Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (eliminate =>)
-not(At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) and not(Parked(Car, s))) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (move not inwards)
-not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
+At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) => Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (eliminate =>)
+not(At(Agent, ParkingLot, s) and At(Car, ParkingLot, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (move not inwards)
+not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
 
 - Drive(Agent, Car, y)
 At(Agent, x, s) and At(Car, x, s) and connected (x, y) => At(Agent, y, Result(Drive(),s)) and At(Car, y, Result(Drive(),s))
      and not(Parked(Car, Result(Drive(),s))) (eliminate =>)
-not(At(Agent, x, s) and At(Car, x, s) and connected (x, y)) or
-     (At(Agent, y, Result(Drive(),s)) and At(Car, y, Result(Drive(),s)) and not(Parked(Car, Result(Drive(),s)))) (move not inwards)
+not(At(Agent, x, s) and At(Car, x, s) and connected (x, y)) or (At(Agent, y, Result(Drive(),s)) and
+     At(Car, y, Result(Drive(),s)) and not(Parked(Car, Result(Drive(),s)))) (move not inwards)
 (not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y))) or (At(Agent, y, Result(Drive(),s)) and
      At(Car, y, Result(Drive(),s)) and not(Parked(Car, Result(Drive(),s)))) (distribute and over or)
 (not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y)) or At(Agent, y, Result(Drive(),s))) and
@@ -102,34 +102,64 @@ not(At(Agent, PickUp, s)) or not(At(Car, PickUp, s)) or Delivered(Car, Result(De
 
 Converting the Successor-state axioms to CNF we get:
 
-(Poss(a, s) or a = Move(y,x) or not(a = Move(y,x)) and
-(Poss(a, s) or At(o,x,s)) and
-(not(At(o, x, Result(a,s))) or a = Move(y,x) or not(a = Move(y,x))) and
-(not(At(o, x, Result(a,s))) or At(o,x,s))) and
-(not(a = Move(y,x)) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s))) and
-(a = Move(y,x) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s)))
+Poss(a, s) => At(o, x, Result(a,s)) <=> ((Agent(o) and (a = Move(o,y,x) or a = Drive(o, Car, y) or (not(a = Move(o,y,x))
+                                            and not(a = Drive(o, Car, y)) and At(o,x,s)))) or
+                                         (Car(o) and (a = Drive(o, Car, y) or ((not(a = Drive(o, Car, y)) and At(o,x,s)))))
+becomes:
 
-(Poss(a, s) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot))) and
+(Poss(a, s) or Agent(o) or Car(o)) and
+(Poss(a, s) or Agent(o) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))) and
+(Poss(a, s) or Agent(o) or a = Drive(o, Car, y) or At(o,x,s)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or Car(o)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or a = Drive(o, Car, y) or At(o,x,s)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or Car(o)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or a = Drive(o, Car, y) or not( a = Drive(o, Car, y))) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or a = Drive(o, Car, y) or At(o,x,s)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or At(o,x,s) or Car(o)) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or At(o,x,s) or a = Drive(o, Car, y) or  not(a = Drive(o, Car, y))) and
+(Poss(a, s) or a = Move(o,y,x) or a = Drive(o, Car, y) or At(o,x,s) or a = Drive(o, Car, y) or At(o,x,s)) and
+(not(At(o, x, Result(a,s))) or Agent(o) or Car(o)) and
+(not(At(o, x, Result(a,s))) or Agent(o) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))) and
+(not(At(o, x, Result(a,s))) or Agent(o) or a = Drive(o, Car, y) or At(o,x,s)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or Car(o)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or a = Drive(o, Car, y) or  not(a = Drive(o, Car, y))) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Move(o,y,x)) or a = Drive(o, Car, y) or At(o,x,s)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or Car(o)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or a = Drive(o, Car, y) or  not(a = Drive(o, Car, y))) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(a = Drive(o, Car, y))or a = Drive(o, Car, y) or At(o,x,s)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or At or Car(o)) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or At or a = Drive(o, Car, y) or  not(a = Drive(o, Car, y))) and
+(not(At(o, x, Result(a,s))) or a = Move(o,y,x) or a = Drive(o, Car, y) or At or a = Drive(o, Car, y) or At(o,x,s)) and
+(not(Agent(o)) or not(a = Move(o,y,x)) or not(Poss(a, s)) or At(o, x, Result(a,s))) and
+(not(Agent(o)) or not(a = Drive(o, Car, y))or not(Poss(a, s)) or At(o, x, Result(a,s))) and
+(not(Agent(o)) or a = Move(o,y,x) or a = Drive(o, Car, y) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s))) and
+(not(Car(o)) or not(a = Drive(o, Car, y))or not(Poss(a, s)) or At(o, x, Result(a,s))) and
+(not(Car(o)) or a = Drive(o, Car, y) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s)))
+
+Poss(a, s) => Parked(Car, Result(a,s)) <=> (a = Park(Agent, Car, ParkingLot) or (not(a = Park(Agent, Car, ParkingLot)) and
+                                           not(a = Drive(Agent, Car, y)) and Parked(Car, s)))
+becomes:
+
+(Poss(a, s) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot)) and
+(Poss(a, s) or a = Park(Agent, Car, ParkingLot) or not(a = Drive(Agent, Car, y))) and
 (Poss(a, s) or a = Park(Agent, Car, ParkingLot) or Parked(Car, s)) and
-(not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot))) and
+(not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot)) and
+(not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or not(a = Drive(Agent, Car, y))) and
 (not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or Parked(Car, s)) and
-(not(a = Park(Agent, Car, ParkingLot)) or not(Poss(a, s)) or Parked(Car, Result(a,s))) and
-(a = Park(Agent, Car, ParkingLot) or not(Parked(Car, s)) or not(Poss(a, s)) or Parked(Car, Result(a,s)))
+(not(a = Park(Agent, Car, ParkingLot) or not(Poss(a, s)) or Parked(Car, Result(a,s))) and
+(a = Park(Agent, Car, ParkingLot) or a = Drive(Agent, Car, y) or not(Parked(Car, s)) or not(Poss(a, s)) or Parked(Car, Result(a,s)))
+
+
+Poss(a, s) => Delivered(Car, Result(a,s)) <=> (a = Deliver(Agent, Car) or (not(a = Deliver(Agent, Car)) and Delivered(Car, s)))
+becomes:
 
 (Poss(a, s) or a = Deliver(Agent, Car) or not(a = Deliver(Agent, Car))) and
-(Poss(a, s) or Delivered(Car, s))) and
+(Poss(a, s) or a = Deliver(Agent, Car) or Delivered(Car, s)) and
 (not(Delivered(Car, Result(a,s))) or a = Deliver(Agent, Car) or not(a = Deliver(Agent, Car))) and
-(not(Delivered(Car, Result(a,s))) or Delivered(Car, s))) and
-(not(a = Deliver(Agent, Car)) or not(Delivered(Car, s))) or not(Poss(a, s)) or Delivered(Car, Result(a,s))) and
-(a = Deliver(Agent, Car) or not(Delivered(Car, s))) or not(Poss(a, s)) or Delivered(Car, Result(a,s)))
-
-(Poss(a, s) or a = Drive(x) or not(a = Drive(x))) and
-(Poss(a, s) or not(Parked(Car, s))) and
-(Parked(Car, Result(a,s)) or a = Drive(x) or not(a = Drive(x))) and
-(Parked(Car, Result(a,s)) or not(Parked(Car, s))) and
-(not(a = Drive(x)) or Parked(Car, s) or not(Poss(a, s)) or not(Parked(Car, Result(a,s)))) and
-(a = Drive(x) or Parked(Car, s) or not(Poss(a, s)) or not(Parked(Car, Result(a,s))))
-
+(not(Delivered(Car, Result(a,s))) or a = Deliver(Agent, Car) or Delivered(Car, s)) and
+(not(a = Deliver(Agent, Car)) or not(Poss(a, s)) or Delivered(Car, Result(a,s))) and
+(a = Deliver(Agent, Car) or not(a = Deliver(Agent, Car))el or not(Poss(a, s)) or Delivered(Car, Result(a,s)))
 
 
 In order to show that the goal can be reached, we need to first negate it and drop the universal quantifier obtained,
@@ -145,7 +175,7 @@ together with all the other axioms.
 
 Now we have At(Agent, ParkingLot, Result(Drive(),s))) and At(Car, ParkingLot, Result(Drive(),s)))
 so we can use resolution with the park action axiom:
-not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
+not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
 to get Parked(Car, Result(Park(Agent, Car, ParkingLot),s)).
 This contradicts with our goal, namely not(Parked(Car, s')), thus by refutation, the goal can be achieved, as
 we arrived at a contradiction, our plan being to drive the car to the parking lot and then park it.

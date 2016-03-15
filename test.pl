@@ -16,7 +16,7 @@
 
 % --- Load domain definitions from an external file -------------------
 
-:- ['domain.pl'].		% Replace with the domain for this problem
+:- ['domain-task21.pl'].		% Replace with the domain for this problem
 
 
 
@@ -27,15 +27,9 @@ connected(dropOff,parkingLot).
 connected(parkingLot, dropOff).
 connected(parkingLot, pickUp).
 connected(pickUp, parkingLot).
-%not(pickUp = dropOff).
-%not(pickUp = parkingLot).
+agent(agent).
 at(agent, dropOff, s0).
-at(carA, parkingLot, s0).
-at(carB, dropOff, s0).
-%carState(carA, parked, s0).
-%carState(carB, none, s0).
-%not(agent = carA).
-%not(carA = carB).
+
 
 
 
@@ -43,7 +37,7 @@ at(carB, dropOff, s0).
 
 % --- Goal condition that the planner will try to reach ---------------
 
-goal(S) :- parked(carB, S), delivered(carA, S), at(agent, dropOff, S).
+goal(S) :- at(agent, parkingLot, S).
 
 
 

@@ -17,7 +17,7 @@
 % marks the predicates whose definition is spread across two or more
 % files
 %
-:- multifile at/3, parked/2, delivered/2.
+:- multifile at/3, parked/2, delivered/2, agent/1, car/1, pickUp/1, parkingLot/1.
 
 
 
@@ -38,25 +38,28 @@ primitive_action( deliver(_,_) ).
 % describe when an action can be carried out, in a generic situation S
 %
 poss( move(Agent, From, To), S ) :-		% implication poss() <= precond
-%  Agent = agent,
+  agent(Agent),
   at(Agent, From, S),
   connected(From, To).
 
 poss( park(Agent, Car, Location), S ) :-
-  Location = parkingLot,
-%  Agent = agent,
+  parkingLot(Location),
+  agent(Agent),
+  car(Car),
   at(Agent, Location, S),
   at(Car, Location, S).
 
 poss( drive(Agent, Car, Y), S ) :-
-%  Agent = agent,
+  agent(Agent),
+  car(Car),
   at(Agent, X, S),
   at(Car, X, S),
   connected(X, Y).
 
 poss( deliver(Agent, Car), S ) :-
-%  Agent = agent,
-  Location = pickUp,
+  agent(Agent),
+  car(Car),
+  pickUp(Location),
   at(Agent, Location, S),
   at(Car, Location, S).
 
@@ -69,22 +72,56 @@ poss( deliver(Agent, Car), S ) :-
 %
 % fluent(..., result(A,S)) :- positive; previous-state, not(negative)
 
-at(Agent, Location, result(A, S)) :-
-  A = move(Agent, _, Location);
-  A = drive(Agent, _, Location);
-  at(Agent, Location, S), not(A = move(Agent, Location, _)), not(A = drive(Agent, _, _)).
-
-at(Car, Location, result(A, S)) :-
-  A = drive(_, Car, Location);
-  at(Car, Location, S), not(A = drive(_, Car, _)).
+at(Who, Location, result(A, S)) :-
+  (
+    (
+      agent(Who),
+      (
+        A = move(Who, _, Location);
+        A = drive(Who, _, Location);
+        (
+          at(Who, Location, S),
+          not(A = move(Who, Location, _)),
+          not(A = drive(Who, _, _))
+        )
+      )
+    );
+    (
+      car(Who),
+      (
+        A = drive(_, Who, Location);
+        (
+          at(Who, Location, S),
+          not(A = drive(_, Who, _))
+        )
+      )
+    )
+  ).
 
 parked(Car, result(A, S)) :-
-  A = park(_, Car, _);
-  parked(Car, S), not(A = park(Agent, Car, _)), not(A = drive(Agent, Car, _)).
+  (
+    car(Car),
+    (
+      A = park(_, Car, _);
+      (
+        parked(Car, S),
+        not(A = park(Agent, Car, _)),
+        not(A = drive(Agent, Car, _))
+      )
+    )
+  ).
 
 delivered(Car, result(A, S)) :-
-  A = deliver(_, Car);
-  delivered(Car, S), not(A = deliver(_, Car)).
+  (
+    car(Car),
+    (
+      A = deliver(_, Car);
+      (
+        delivered(Car, S),
+        not(A = deliver(_, Car))
+      )
+    )
+  ).
 
 
 
