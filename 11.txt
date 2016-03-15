@@ -1,0 +1,30 @@
+1.11)
+Converting all possibility axioms to CNF, we get:
+- move(area)
+at(Agent, x, s) and at(Car, x, s) and connected(x, y) => at(Agent, y, s) (eliminate =>)
+not(at(Agent, x, s) and at(Car, x, s) and connected(x, y)) or at(Agent, y, s) (move not inwards)
+not(at(Agent, x, s)) or not(at(Car,x,s)) or not(connected(x,y)) or at(Agent, y, s) (standardize variables apart)
+not(at(Agent, x, s0)) or not(at(Car,x,s0)) or not(connected(x,y)) or at(Agent, y, s1)
+
+- park(Car)
+at(Agent, ParkingLot, s) and at(Car, ParkingLot, s) and not(carState(Parked, s)) => carState(Parked, s) (eliminate =>)
+not(at(Agent, ParkingLot, s) and at(Car, ParkingLot, s) and not(carState(Parked, s))) or carState(Parked, s) (move not inwards)
+not(at(Agent, ParkingLot, s)) or not(at(Car, ParkingLot, s)) or carState(Parked, s)) or carState(Parked, s) (standardize variables apart)
+not(at(Agent, ParkingLot, s0)) or not(at(Car, ParkingLot, s0)) or carState(Parked, s0)) or carState(Parked, s1)
+
+- drive(Car)
+at(Agent, x, s) and at(Car, x, s) and connected (x, y) => at(Agent, y, s) and at(Car, y, s) and not(carState(Parked, s)) (eliminate =>)
+not(at(Agent, x, s) and at(Car, x, s) and connected (x, y)) or (at(Agent, y, s) and at(Car, y, s) and not(carState(Parked, s))) (move not inwards)
+(not(at(Agent, x, s)) or not(at(Car, x, s)) or not(connected (x, y))) or (at(Agent, y, s) and at(Car, y, s) and not(carState(Parked, s))) (distribute and over or)
+  (not(at(Agent, x, s)) or not(at(Car, x, s)) or not(connected (x, y)) or at(Agent, y, s)) and
+  (not(at(Agent, x, s)) or not(at(Car, x, s)) or not(connected (x, y)) or at(Car, y, s)) and
+  (not(at(Agent, x, s)) or not(at(Car, x, s)) or not(connected (x, y)) or not(carState(Parked, s))) (standardize variables apart)
+(not(at(Agent, x, s0)) or not(at(Car, x, s0)) or not(connected (x, y)) or at(Agent, y, s1)) and
+  (not(at(Agent, x, s0)) or not(at(Car, x, s0)) or not(connected (x, y)) or at(Car, y, s1)) and
+  (not(at(Agent, x, s0)) or not(at(Car, x, s0)) or not(connected (x, y)) or not(carState(Parked, s1)))
+
+-deliver(Car)
+at(Agent, PickUp, s) and at(Car, PickUp, s) => carState(Delivered, s) (eliminate =>)
+not(at(Agent, PickUp, s) and at(Car, PickUp, s)) or carState(Delivered, s) (move not inwards)
+not(at(Agent, PickUp, s)) or not(at(Car, PickUp, s)) or carState(Delivered, s) (standardize variables apart)
+not(at(Agent, PickUp, s0)) or not(at(Car, PickUp, s0)) or carState(Delivered, s1)

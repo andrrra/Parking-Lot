@@ -1,0 +1,154 @@
+-----------------------------------------------------------------------
+ ------ Informatics 2D - 2015/16 - Second Assignment - Planning ------
+-----------------------------------------------------------------------
+
+ Write here you matriculation number (only - your name is not needed)
+ Matriculation Number: s1402967
+
+1.1) Since the way in which the areas are connected does not change, we can define the way
+they are connected using an atemporal predicate namely "connected" e.g.:
+Connected(DropOff, ParkingLot), Connected(ParkingLot, PickUp).
+
+1.2) I used a fluent predicate, named "at" which takes the car or agent as an object, the
+location it is current at and the current situation. For example:
+At(Car, DropOff, s0) shows that the car is at the drop-off location in the initial state
+At(Agent, DropOff, s0) shows that the agent is at the drop-off location in the initial state.
+
+1.3) Two fluent predicates: Parked(Car, s) and Delivered(Car, s).
+Parked(Car, s) means that the car is parked.
+Delivered(Car, s) means that the car is being delivered to customers in the waiting area.
+
+1.4) Initial state:
+Connected(DropOff, ParkingLot) and
+Connected(ParkingLot, DropOff) and
+Connected(ParkingLot, PickUp) and
+Connected(PickUp, ParkingLot) and
+At(Car, DropOff, s0) and
+At(Agent, DropOff, s0) and
+
+Since Connected(x,y) is not the same thing as Connected(y,x) (from the prolog view), we have to write every adjacency twice.
+
+1.5) Action: Move(Agent,x,y)
+     Possibility Axiom: At(Agent, x, s) and Connected(x, y) => Poss(Move(Agent,x,y), s)
+     Effect Axiom: Poss(Move(Agent,x,y), s) => At(Agent, y, Result(Move(x,y),s))
+
+1.6) Action: Park(Agent, Car, ParkingLot)
+     Possibility Axiom: At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) => Poss(Park(Agent, Car, ParkingLot), s)
+     Effect Axiom: Poss(Park(Agent, Car, ParkingLot), s) => Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
+
+1.7) Action: Drive(Agent, Car, y)
+     Possibility Axiom: At(Agent, x, s) and At(Car, x, s) and Connected(x, y)
+                        => Poss(Drive(Agent, Car, y), s)
+     Effect Axiom: Poss(Drive(Agent, Car, y), s) => At(Agent, y, Result(Drive(),s)) and At(Car, y, Result(Drive(),s))
+                                          and not(Parked(Car, Result(Drive(),s)))
+
+1.8) Action: Deliver(Agent, Car)
+     Possibility Axiom: At(Agent, PickUp, s) and At(Car, PickUp, s) => Poss(Deliver(Agent, Car), s)
+     Effect Axiom: Poss(Deliver(Agent, Car), s) => Delivered(Car, Result(Deliver(Agent, Car),s))
+
+1.9) This is known as the Frame problem, which is the challenge of representing the effects of actions
+in logic without having to represent explicitly a large number of intuitively obvious non-effects. In other words,
+we need to state what has changed, as well as what has stayed the same.
+One solution is to add frame axioms which explicitly assert all the propositions that remain the same. However,
+this is impractical as in big systems many frame axioms will have to be written. Furthermore it is inefficient,
+as most things will stay the same most of the time.
+Successor states solve this problem through the use of <=>, which specifies the truth value of the fluent
+in the next state, as a function of the action, as well as the truth value in the current state. This ensures
+that no additional frame axioms will be required.
+STRIPS solves the frame problem by assuming that if an action is not specifically known to change some feature
+of the world, it does not. This principle is easy to represent procedurally (thus the popularity of procedural
+solutions to the frame problem).
+
+1.10) Successor-state axioms:
+Poss(a, s) => At(Agent, x, Result(a,s)) <=> (a = Move(Agent,y,x) or (not(a = Move(Agent,y,x)) and At(o,x,s)))
+Poss(a, s) => At(Agent, x, Result(a,s)) <=> (a = Drive(Agent, Car, y) or (not(a = Drive(Agent, Car, y)) and At(Agent, x, Result(a,s))))
+Poss(a, s) => At(Car, x, Result(a,s)) <=> (a = Drive(Agent, Car, y) or (not(a = Drive(Agent, Car, y)) and At(Car, x, Result(a,s))))
+
+Poss(a, s) => Parked(Car, Result(a,s)) <=> (a = Park(Car) or (not(a = Park(Car)) and not(a = Drive(Agent, Car, y))
+                                           and not(a = Deliver(Agent, Car)) and Parked(Car, s)))
+
+Poss(a, s) => Delivered(Car, Result(a,s)) <=> (a = Deliver(Agent, Car) or (not(a = Deliver(Agent, Car)) and not(a = Park(Car)) and
+                                              not(a = Drive(Agent, Car, y)) and Delivered(Car, s)))
+
+1.11)
+
+Converting all possibility axioms to CNF, we get:
+- Move(x,y)
+At(Agent, x, s) and At(Car, x, s) and Connected(x, y) => At(Agent, y, Result(Move(x,y),s)) (eliminate =>)
+not(At(Agent, x, s) and At(Car, x, s) and Connected(x, y)) or At(Agent, y, Result(Move(x,y),s)) (move not inwards)
+not(At(Agent, x, s)) or not(At(Car,x,s)) or not(Connected(x,y)) or At(Agent, y, Result(Move(x,y),s))
+
+- Park(Agent, Car, ParkingLot)
+At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) and not(Parked(Car, s)) => Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (eliminate =>)
+not(At(Agent, ParkingLot, s) and At(Car, ParkingLot, s) and not(Parked(Car, s))) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s)) (move not inwards)
+not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
+
+- Drive(Agent, Car, y)
+At(Agent, x, s) and At(Car, x, s) and connected (x, y) => At(Agent, y, Result(Drive(),s)) and At(Car, y, Result(Drive(),s))
+     and not(Parked(Car, Result(Drive(),s))) (eliminate =>)
+not(At(Agent, x, s) and At(Car, x, s) and connected (x, y)) or
+     (At(Agent, y, Result(Drive(),s)) and At(Car, y, Result(Drive(),s)) and not(Parked(Car, Result(Drive(),s)))) (move not inwards)
+(not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y))) or (At(Agent, y, Result(Drive(),s)) and
+     At(Car, y, Result(Drive(),s)) and not(Parked(Car, Result(Drive(),s)))) (distribute and over or)
+(not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y)) or At(Agent, y, Result(Drive(),s))) and
+  (not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y)) or At(Car, y, Result(Drive(),s))) and
+  (not(At(Agent, x, s)) or not(At(Car, x, s)) or not(connected (x, y)) or not(Parked(Car, Result(Drive(),s))))
+
+- Deliver(Agent, Car)
+At(Agent, PickUp, s) and At(Car, PickUp, s) => Delivered(Car, Result(Deliver(Agent, Car),s)) (eliminate =>)
+not(At(Agent, PickUp, s) and At(Car, PickUp, s)) or Delivered(Car, Result(Deliver(Agent, Car),s)) (move not inwards)
+not(At(Agent, PickUp, s)) or not(At(Car, PickUp, s)) or Delivered(Car, Result(Deliver(Agent, Car),s))
+
+
+Converting the Successor-state axioms to CNF we get:
+
+(Poss(a, s) or a = Move(y,x) or not(a = Move(y,x)) and
+(Poss(a, s) or At(o,x,s)) and
+(not(At(o, x, Result(a,s))) or a = Move(y,x) or not(a = Move(y,x))) and
+(not(At(o, x, Result(a,s))) or At(o,x,s))) and
+(not(a = Move(y,x)) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s))) and
+(a = Move(y,x) or not(At(o,x,s)) or not(Poss(a, s)) or At(o, x, Result(a,s)))
+
+(Poss(a, s) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot))) and
+(Poss(a, s) or a = Park(Agent, Car, ParkingLot) or Parked(Car, s)) and
+(not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or not(a = Park(Agent, Car, ParkingLot))) and
+(not(Parked(Car, Result(a,s))) or a = Park(Agent, Car, ParkingLot) or Parked(Car, s)) and
+(not(a = Park(Agent, Car, ParkingLot)) or not(Poss(a, s)) or Parked(Car, Result(a,s))) and
+(a = Park(Agent, Car, ParkingLot) or not(Parked(Car, s)) or not(Poss(a, s)) or Parked(Car, Result(a,s)))
+
+(Poss(a, s) or a = Deliver(Agent, Car) or not(a = Deliver(Agent, Car))) and
+(Poss(a, s) or Delivered(Car, s))) and
+(not(Delivered(Car, Result(a,s))) or a = Deliver(Agent, Car) or not(a = Deliver(Agent, Car))) and
+(not(Delivered(Car, Result(a,s))) or Delivered(Car, s))) and
+(not(a = Deliver(Agent, Car)) or not(Delivered(Car, s))) or not(Poss(a, s)) or Delivered(Car, Result(a,s))) and
+(a = Deliver(Agent, Car) or not(Delivered(Car, s))) or not(Poss(a, s)) or Delivered(Car, Result(a,s)))
+
+(Poss(a, s) or a = Drive(x) or not(a = Drive(x))) and
+(Poss(a, s) or not(Parked(Car, s))) and
+(Parked(Car, Result(a,s)) or a = Drive(x) or not(a = Drive(x))) and
+(Parked(Car, Result(a,s)) or not(Parked(Car, s))) and
+(not(a = Drive(x)) or Parked(Car, s) or not(Poss(a, s)) or not(Parked(Car, Result(a,s)))) and
+(a = Drive(x) or Parked(Car, s) or not(Poss(a, s)) or not(Parked(Car, Result(a,s))))
+
+
+
+In order to show that the goal can be reached, we need to first negate it and drop the universal quantifier obtained,
+so that we get:
+not(Parked(Car, s'))
+
+Given our initial state, we see that we can drive the car to the Parking Lot, using the action Drive(ParkingLot), so that
+we have:
+(not(At(Agent, DropOff, s)) or not(At(Car, DropOff, s)) or not(connected (DropOff, ParkingLot)) or At(Agent, ParkingLot, Result(Drive(),s))) and
+(not(At(Agent, DropOff, s)) or not(At(Car, DropOff, s)) or not(connected (DropOff, ParkingLot)) or At(Car, ParkingLot, Result(Drive(),s))) and
+(not(At(Agent, DropOff, s)) or not(At(Car, DropOff, s)) or not(connected (DropOff, ParkingLot)) or not(Parked(Car, Result(Drive(),s))))
+together with all the other axioms.
+
+Now we have At(Agent, ParkingLot, Result(Drive(),s))) and At(Car, ParkingLot, Result(Drive(),s)))
+so we can use resolution with the park action axiom:
+not(At(Agent, ParkingLot, s)) or not(At(Car, ParkingLot, s)) or Parked(Car, s)) or Parked(Car, Result(Park(Agent, Car, ParkingLot),s))
+to get Parked(Car, Result(Park(Agent, Car, ParkingLot),s)).
+This contradicts with our goal, namely not(Parked(Car, s')), thus by refutation, the goal can be achieved, as
+we arrived at a contradiction, our plan being to drive the car to the parking lot and then park it.
+
+--------------------
+Answers to parts 2 and 3 should be included in the appropriate domain-*.pl and instance-*.pl files.
