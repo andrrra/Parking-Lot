@@ -27,25 +27,24 @@ connected(dropOff,parkingLot).
 connected(parkingLot, dropOff).
 connected(parkingLot, pickUp).
 connected(pickUp, parkingLot).
+car(carA).
+car(carB).
+agent(agent).
 parkingLot(parkingLot).
 pickUp(pickUp).
-agent(agent).
-car(car).
-at(agent, parkingLot, s0).
-at(car, parkingLot, s0).
-parked(car, s0).
-dirty(car, s0).
-
-
+at(agent, dropOff, s0).
+at(carA, parkingLot, s0).
+at(carB, dropOff, s0).
+parked(carA, s0).
+dirty(carA).
 
 
 
 
 % --- Goal condition that the planner will try to reach ---------------
 
-%goal(S) :- isClean(car, S).
-%goal(S) :- at(car, pickUp, S).
-goal(S) :- delivered(car, S).
+goal(S) :- parked(carB, S), delivered(carA, S), at(agent, dropOff, S).
+
 
 
 
