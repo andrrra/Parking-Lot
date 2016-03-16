@@ -17,7 +17,7 @@
 % marks the predicates whose definition is spread across two or more
 % files
 %
-:- multifile at/3, parked/2, delivered/2, agent/1, car/1, pickUp/1, parkingLot/1, dirty/2, isClean/2.
+:- multifile at/3, parked/2, delivered/2, agent/1, car/1, pickUp/1, parkingLot/1, dirty/2, isClean/2, keys/1, keysToCar/2, holding/3, stored/3.
 
 
 
@@ -28,9 +28,11 @@
 %
 primitive_action( move(_,_,_) ).	% underscore means `anything'
 primitive_action( park(_,_,_) ).
-primitive_action( drive(_,_,_) ).
+primitive_action( drive(_,_,_,_) ).
 primitive_action( deliver(_,_) ).
 primitive_action( clean(_,_) ).
+primitive_action( grab(_,_,_,_) ).
+primitive_action( store(_,_,_,_) ).
 
 
 
@@ -50,12 +52,15 @@ poss( park(Agent, Car, Location), S ) :-
   at(Agent, Location, S),
   at(Car, Location, S).
 
-poss( drive(Agent, Car, Y), S ) :-
+poss( drive(Agent, Car, Keys, Y), S ) :-
   agent(Agent),
   car(Car),
   at(Agent, X, S),
   at(Car, X, S),
-  connected(X, Y).
+  keys(Keys),
+  keysToCar(Keys, Car),
+  connected(X, Y),
+  holding(Agent, Keys, S).
 
 poss( deliver(Agent, Car), S ) :-
   agent(Agent),
@@ -70,6 +75,25 @@ poss( clean(Agent, Car), S ) :-
   car(Car),
   dirty(Car, S).
 
+poss( grab(Agent, Keys, Car, ParkingLot), S ) :-
+  car(Car),
+  agent(Agent),
+  keys(Keys),
+  keysToCar(Keys, Car),
+  parkingLot(ParkingLot),
+  at(Agent, ParkingLot, S),
+  stored(Keys, ParkingLot, S),
+  not(holding(Agent,_,S)).
+
+poss( store(Agent, Keys, Car, ParkingLot), S ) :-
+  car(Car),
+  agent(Agent),
+  keys(Keys),
+  keysToCar(Keys, Car),
+  parkingLot(ParkingLot),
+  at(Agent, ParkingLot, S),
+  parked(Car, S),
+  holding(Agent, Keys, S).
 
 
 % --- Successor state axioms ------------------------------------------
@@ -84,21 +108,21 @@ at(Who, Location, result(A, S)) :-
       agent(Who),
       (
         A = move(Who, _, Location);
-        A = drive(Who, _, Location);
+        A = drive(Who, _, _, Location);
         (
           at(Who, Location, S),
           not(A = move(Who, Location, _)),
-          not(A = drive(Who, _, _))
+          not(A = drive(Who, _, _, _))
         )
       )
     );
     (
       car(Who),
       (
-        A = drive(_, Who, Location);
+        A = drive(_, Who, _, Location);
         (
           at(Who, Location, S),
-          not(A = drive(_, Who, _))
+          not(A = drive(_, Who, _, _))
         )
       )
     )
@@ -112,7 +136,7 @@ parked(Car, result(A, S)) :-
       (
         parked(Car, S),
         not(A = park(Agent, Car, _)),
-        not(A = drive(Agent, Car, _))
+        not(A = drive(Agent, Car, _, _))
       )
     )
   ).
@@ -150,12 +174,37 @@ dirty(Car, result(A, S)) :-
       (
         parked(Car, S),
         not(A = park(_, Car, _)),
-        not(A = drive(_, Car, _)),
+        not(A = drive(_, Car, _, _)),
         not(A = deliver(_, Car))
       )
     )
   ).
 
+holding(Agent, Keys, result(A, S)) :-
+  (
+    agent(Agent), keys(Keys),
+    (
+      A = grab(Agent, Keys, _, _);
+      (
+        holding(Agent, Keys, S),
+        not(A = grab(Agent, Keys, _, _)),
+        not(A = store(Agent, Keys, _, _))
+      )
+    )
+  ).
+
+stored(Keys, ParkingLot, result(A, S)) :-
+  (
+    keys(Keys), parkingLot(ParkingLot),
+    (
+      A = store(_, Keys, _, ParkingLot);
+      (
+        stored(Keys, ParkingLot, S),
+        not(A = store(_, Keys, _, ParkingLot)),
+        not(A = grab(_, Keys, _, ParkingLot))
+      )
+    )
+  ).
 
 % ---------------------------------------------------------------------
 % ---------------------------------------------------------------------

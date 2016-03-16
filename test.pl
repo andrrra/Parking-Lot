@@ -1,26 +1,7 @@
-% ---------------------------------------------------------------------
-%  ----- Informatics 2D - 2015/16 - Second Assignment - Planning -----
-% ---------------------------------------------------------------------
-%
-% Write here you matriculation number (only - your name is not needed)
-% Matriculation Number: s1402967
-%
-%
-% ------------------------- Problem Instance --------------------------
-% This file is a template for a problem instance: the definition of an
-% initial state and of a goal.
-
 % debug(on).	% need additional debug information at runtime?
 
-
-
 % --- Load domain definitions from an external file -------------------
-
-:- ['domain-task31.pl'].		% Replace with the domain for this problem
-
-
-
-
+:- ['domain-task32.pl'].		% Replace with the domain for this problem
 % --- Definition of the initial state ---------------------------------
 
 connected(dropOff,parkingLot).
@@ -29,25 +10,26 @@ connected(parkingLot, pickUp).
 connected(pickUp, parkingLot).
 parkingLot(parkingLot).
 pickUp(pickUp).
+dropOff(dropOff).
 agent(agent).
 car(car).
-at(agent, parkingLot, s0).
+keys(keys).
+keysToCar(keys, car).
+
+at(agent, dropOff, s0).
 at(car, parkingLot, s0).
 parked(car, s0).
 dirty(car, s0).
+%holding(agent, keys, s0).
 
+stored(keys, parkingLot, s0).
 
-
-
-
+%parked(car, s0).
 
 % --- Goal condition that the planner will try to reach ---------------
-
-%goal(S) :- isClean(car, S).
+%goal(S) :- stored(keys, parkingLot, S).
+%goal(S) :- holding(agent, keys, S).
 %goal(S) :- at(car, pickUp, S).
 goal(S) :- delivered(car, S).
-
-
-
 % ---------------------------------------------------------------------
 % ---------------------------------------------------------------------
