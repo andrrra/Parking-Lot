@@ -32,6 +32,7 @@ car(carB).
 agent(agent).
 parkingLot(parkingLot).
 pickUp(pickUp).
+dropOff(dropOff).
 keys(keysA).
 keys(keysB).
 

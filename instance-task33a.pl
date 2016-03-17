@@ -16,33 +16,46 @@
 
 % --- Load domain definitions from an external file -------------------
 
-:- ['domain-task21.pl'].		% Replace with the domain for this problem
+:- ['domain-task33.pl'].		% Replace with the domain for this problem
 
 
 
 
 % --- Definition of the initial state ---------------------------------
 
-connected(dropOff, parkingLot).
+connected(dropOff,parkingLot).
 connected(parkingLot, dropOff).
 connected(parkingLot, pickUp).
 connected(pickUp, parkingLot).
+car(carA).
+car(carB).
+car(carX).
+car(carY).
+agent(agent).
 parkingLot(parkingLot).
 pickUp(pickUp).
 dropOff(dropOff).
-agent(agent).
-car(car).
-at(agent, parkingLot, s0).
-at(car, parkingLot, s0).
+keys(keysA).
+keys(keysB).
+slot(slot1).
+slot(slot2).
+slot(slot3).
+slot(slot4).
+occupied(slot1, carX, s0).
+occupied(slot2, carY, s0).
 
+keysToCar(keysA, carA).
+keysToCar(keysB, carB).
+
+at(carA, dropOff, s0).
+at(carB, dropOff, s0).
+at(agent, dropOff, s0).
 
 
 
 % --- Goal condition that the planner will try to reach ---------------
 
-goal(S) :- at(agent, dropOff, S), parked(car, S).
-
-
+goal(S) :- stored(keysB, parkingLot, S), stored(keysA, parkingLot, S).
 
 
 % ---------------------------------------------------------------------

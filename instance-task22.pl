@@ -27,6 +27,9 @@ connected(dropOff,parkingLot).
 connected(parkingLot, dropOff).
 connected(parkingLot, pickUp).
 connected(pickUp, parkingLot).
+pickUp(pickUp).
+parkingLot(parkingLot).
+dropOff(dropOff).
 at(agent, pickUp, s0).
 agent(agent).
 

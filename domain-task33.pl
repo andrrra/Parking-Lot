@@ -17,7 +17,8 @@
 % marks the predicates whose definition is spread across two or more
 % files
 %
-:- multifile at/3, parked/2, delivered/2, agent/1, car/1, pickUp/1, parkingLot/1, dropOff/1, dirty/2, isClean/2, keys/1, keysToCar/2, holding/3, stored/3.
+:- multifile at/3, parked/3, delivered/2, agent/1, car/1, pickUp/1, parkingLot/1,
+dropOff/1, dirty/2, isClean/2, keys/1, keysToCar/2, holding/3, stored/3, slot/1, occupied/3.
 
 
 
@@ -27,7 +28,7 @@
 % actions available to the planner
 %
 primitive_action( move(_,_,_) ).	% underscore means `anything'
-primitive_action( park(_,_,_) ).
+primitive_action( park(_,_,_,_) ).
 primitive_action( drive(_,_,_,_) ).
 primitive_action( deliver(_,_) ).
 primitive_action( clean(_,_) ).
@@ -45,12 +46,14 @@ poss( move(Agent, From, To), S ) :-		% implication poss() <= precond
   at(Agent, From, S),
   connected(From, To).
 
-poss( park(Agent, Car, Location), S ) :-
+poss( park(Agent, Car, Slot, Location), S ) :-
   parkingLot(Location),
   agent(Agent),
   car(Car),
+  slot(Slot),
   at(Agent, Location, S),
-  at(Car, Location, S).
+  at(Car, Location, S),
+  not(occupied(Slot, _, S)).
 
 poss( drive(Agent, Car, Keys, Y), S ) :-
   agent(Agent),
@@ -103,7 +106,7 @@ poss( store(Agent, Keys, Car, ParkingLot), S ) :-
   keysToCar(Keys, Car),
   parkingLot(ParkingLot),
   at(Agent, ParkingLot, S),
-  parked(Car, S),
+  parked(Car, _, S),
   holding(Agent, Keys, S).
 
 
@@ -139,14 +142,14 @@ at(Who, Location, result(A, S)) :-
     )
   ).
 
-parked(Car, result(A, S)) :-
+parked(Car, Slot, result(A, S)) :-
   (
-    car(Car),
+    car(Car), slot(Slot),
     (
-      A = park(_, Car, _);
+      A = park(_, Car, Slot, _);
       (
-        parked(Car, S),
-        not(A = park(Agent, Car, _)),
+        parked(Car, Slot, S),
+        not(A = park(Agent, Car, Slot, _)),
         not(A = drive(Agent, Car, _, _))
       )
     )
@@ -172,7 +175,7 @@ isClean(Car, result(A, S)) :-
       (
         isClean(Car, S),
         not(A = clean(_, Car)),
-        not(A = park(_, Car, _))
+        not(A = park(_, Car, _, _))
       )
     )
   ).
@@ -181,10 +184,10 @@ dirty(Car, result(A, S)) :-
   (
     car(Car),
     (
-      A = park(_, Car, _);
+      A = park(_, Car, _, _);
       (
-        parked(Car, S),
-        not(A = park(_, Car, _)),
+        parked(Car, _, S),
+        not(A = park(_, Car, _, _)),
         not(A = drive(_, Car, _, _)),
         not(A = deliver(_, Car))
       )
@@ -217,6 +220,21 @@ stored(Keys, ParkingLot, result(A, S)) :-
       )
     )
   ).
+
+occupied(Slot, Car, result(A, S)) :-
+  (
+    slot(Slot), car(Car),
+    (
+      A = park(_, Car, Slot, _);
+      (
+        occupied(Slot, Car, S),
+        not(A = park(_, Car, Slot, _)),
+        not(A = drive(_, Car, _, _))
+      )
+    )
+  ).
+
+
 
 % ---------------------------------------------------------------------
 % ---------------------------------------------------------------------

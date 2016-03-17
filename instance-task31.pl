@@ -32,6 +32,7 @@ car(carB).
 agent(agent).
 parkingLot(parkingLot).
 pickUp(pickUp).
+dropOff(dropOff).
 at(agent, dropOff, s0).
 at(carA, parkingLot, s0).
 at(carB, dropOff, s0).
